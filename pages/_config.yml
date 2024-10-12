@@ -1,0 +1,23 @@
+# Site settings
+title: The Copenhagen Book 번역
+description: 번역
+baseurl: "/copenhagen_kr" # Add a base URL if applicable, e.g., "/repository-name"
+url: "https://awhn.github.io" # Your GitHub Pages URL
+
+# Jekyll settings
+source: pages
+markdown: kramdown
+theme: minima # Change if using a different theme
+
+# Permalinks
+permalink: /:name/
+
+# Exclude files or folders from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .github
+  - README.md
+  - _config.yml
