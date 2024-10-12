@@ -2,7 +2,7 @@ name: "Publish"
 on:
   push:
     branches:
-      - main
+      - kr
 
 env:
   CLOUDFLARE_API_TOKEN: ${{secrets.CLOUDFLARE_PAGES_API_TOKEN}}
@@ -28,4 +28,4 @@ jobs:
       - name: install wrangler
         run: npm i -g wrangler
       - name: deploy
-        run: wrangler pages deploy dist --project-name copenhagen --branch main
+        run: wrangler pages deploy dist --project-name copenhagen_kr --branch kr

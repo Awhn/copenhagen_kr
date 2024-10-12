@@ -4,13 +4,13 @@ title: "Server-side tokens"
 
 # Server-side tokens
 
-## Table of contents
+## 목차
 
-- [Overview](#overview)
+- [개요](#개요)
 - [Generating tokens](#generating-tokens)
 - [Storing tokens](#storing-tokens)
 
-## Overview
+## 개요
 
 "서버 사이드 토큰"은 서버에 저장된 임의의 긴 문자열을 말합니다. 이는 데이터베이스나 인메모리 데이터 저장소(예: Redis)에 지속적으로 저장될 수 있으며, 인증 및 검증에 사용됩니다. 토큰은 저장소에 존재하는지를 확인함으로써 검증됩니다. 세션 ID, 이메일 인증 토큰, 접근 토큰 등이 그 예시입니다.
 
