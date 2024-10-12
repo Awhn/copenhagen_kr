@@ -1,6 +1,6 @@
 # Site settings
 title: The Copenhagen Book
-description: 한국어 번역
+description: The Copenhagen Book 한국어 번역
 baseurl: "/copenhagen_kr/" # Add a base URL if applicable, e.g., "/repository-name"
 url: "https://awhn.github.io" # Your GitHub Pages URL
 
