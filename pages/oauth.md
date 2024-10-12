@@ -4,9 +4,9 @@ title: "OAuth"
 
 # OAuth
 
-## Table of contents
+## 목차
 
-- [Overview](#overview)
+- [개요](#개요)
 - [Create authorization URL](#create-authorization-url)
 - [Validate authorization code](#validate-authorization-code)
 - [Proof key for code exchange (PKCE)](#proof-key-for-code-exchange-pkce-flow)
@@ -15,22 +15,22 @@ title: "OAuth"
 - [Account linking](#account-linking)
 - [Other considerations](#other-considerations)
 
-## Overview
+## 개요
 
-OAuth is a widely used protocol for authorization. It's what's behind "Sign in with Google" and "Sign in with GitHub." It allows users to grant access to their resources on an external service, like Google, to your application without sharing their credentials. Instead of implementing a password-based auth, we can replace it with OAuth to let a third-party service handle authentication. You can then get the user's profile and use that to create users and sessions.
+OAuth는 널리 사용되는 인증 프로토콜입니다. "구글로 로그인", "GitHub로 로그인" 기능이 OAuth를 기반으로 하고 있습니다. OAuth를 사용하면 사용자가 구글과 같은 외부 서비스에 자신의 자격 증명을 공유하지 않고 애플리케이션에 자원에 대한 접근 권한을 부여할 수 있습니다. 비밀번호 기반 인증을 구현하는 대신, OAuth를 사용하여 서드파티 서비스가 인증을 처리하게 할 수 있습니다. 그 후 사용자의 프로필을 가져와 사용자를 생성하고 세션을 관리할 수 있습니다.
 
-In a basic OAuth flow, the user is redirected to a third-party service, the service authenticates the user, and the user is redirected back to your application. An access token for the user is made available which allows you to request resources on behalf of the user.
+기본적인 OAuth 흐름에서는 사용자가 서드파티 서비스로 리디렉션되고, 서비스가 사용자를 인증한 후 다시 애플리케이션으로 리디렉션됩니다. 이 과정에서 사용자를 대신해 자원에 접근할 수 있는 액세스 토큰이 발급됩니다.
 
-It requires 2 server endpoints in your application:
+애플리케이션에서는 두 가지 서버 엔드포인트가 필요합니다:
 
-1. Login endpoint (GET): Redirects the user to the OAuth provider.
-2. Callback endpoint (GET): Handles the redirect from the OAuth provider.
+1. 로그인 엔드포인트 (GET): 사용자를 OAuth 제공자로 리디렉션합니다.
+2. 콜백 엔드포인트 (GET): OAuth 제공자로부터의 리디렉션을 처리합니다.
 
-There are multiple versions of OAuth, with OAuth 2.0 being the latest one. This page will only cover OAuth 2.0, specifically the authorization code grant type, as standardized in [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749). The implicit grant type is deprecated and should not be used.
+OAuth에는 여러 버전이 있지만, 이 문서에서는 OAuth 2.0과 그중에서도 [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749)에 표준화된 인증 코드 방식만 다룹니다. 암시적 승인 방식은 사용되지 말아야 하며, 더 이상 사용하지 않는 방식입니다.
 
 ## Create authorization URL
 
-Using GitHub as an example, the first step is to create a GET endpoint (login endpoint) that redirects the user to GitHub. The redirect location is the authorization URL with a few parameters.
+GitHub를 예로 들어, 첫 번째 단계는 사용자를 GitHub로 리디렉션하는 GET 엔드포인트(로그인 엔드포인트)를 생성하는 것입니다. 리디렉션 위치는 인증 URL이며, 몇 가지 매개변수가 포함됩니다.
 
 ```
 https://github.com/login/oauth/authorize?
@@ -40,17 +40,17 @@ response_type=code
 &state=<STATE>
 ```
 
-The state is used to ensure the user initiating the process and the one we redirected back to (in the next section) are the same user. As such, a new state must be generated on each request. While it is not strictly required by the spec, it is highly recommended and may be required depending on the provider. It should be generated using a cryptographically secure random generator and have at least 112 bits of entropy. The state can also be used to pass data from the login endpoint to the callback endpoint, though a cookie can just be used instead.
+state는 인증 프로세스를 시작한 사용자와 리디렉션된 사용자가 동일한지 확인하기 위해 사용됩니다. 따라서 요청마다 새로운 state를 생성해야 합니다. 명시적으로 요구되는 것은 아니지만 권장되며, 제공자에 따라 필수일 수도 있습니다. state는 암호적으로 안전한 난수 생성기를 사용해 최소 112비트 이상의 엔트로피로 생성해야 합니다. 또한, 로그인 엔드포인트에서 콜백 엔드포인트로 데이터를 전달하는 데 사용할 수도 있지만, 쿠키를 사용하는 것이 더 간편할 수 있습니다.
 
-Your server must keep track of the state associated with each attempt. One simple approach is to store it as a cookie with `HttpOnly`, `SameSite=Lax`, `Secure`, and `Path=/` attributes. You may also assign the state to the current session.
+서버는 각 시도와 관련된 `state`를 추적해야 합니다. 간단한 방법으로는 `HttpOnly`, `SameSite=Lax`, `Secure`, `Path=/` 속성이 있는 쿠키로 저장하는 방법이 있습니다. 또는 `state`를 현재 세션에 할당할 수도 있습니다.
 
-You can define a `scope` parameter to request access to additional resources. If you have multiple scopes, they should be separated by spaces.
+추가 자원에 접근하기 위해 `scope` 매개변수를 정의할 수 있습니다. 여러 `scope`가 있을 경우, 공백으로 구분해야 합니다.
 
 ```
 &scope=email%20identity
 ```
 
-You can create a "Sign in" button by adding a link to the login endpoint.
+로그인 엔드포인트에 링크를 추가하여 "로그인" 버튼을 만들 수 있습니다.
 
 ```html
 <a href="/login/github">Sign in with GitHub</a>
@@ -58,15 +58,15 @@ You can create a "Sign in" button by adding a link to the login endpoint.
 
 ## Validate authorization code
 
-The user will be redirected to the callback endpoint (as defined in `redirect_uri`) with a single-use authorization code, which is included as a query parameter. This code is then exchanged for an access token.
+사용자는 인증 코드가 포함된 상태로(쿼리 매개변수로 포함됨) 콜백 엔드포인트(즉, `redirect_uri`에 정의된 위치)로 리디렉션됩니다. 이 코드는 액세스 토큰으로 교환됩니다.
 
 ```
 https://example.com/login/github/callback?code=<CODE>&state=<STATE>
 ```
 
-If you add a state to the authorization URL, the redirect request will include a `state` parameter. It is critical to check that it matches the state associated with the attempt. Return an error if the state is missing or if they don't match. A common mistake is forgetting to check whether the `state` parameter exists in the URL.
+`state`를 인증 URL에 추가하면 리디렉션 요청에 state 매개변수가 포함됩니다. 이 `state`가 시도와 일치하는지 확인하는 것이 중요합니다. state가 없거나 일치하지 않으면 오류를 반환해야 합니다. state 매개변수를 확인하지 않는 것은 흔한 실수입니다.
 
-The code is sent to the OAuth provider's token endpoint via an `application/x-www-form-urlencoded` POST request.
+코드는 OAuth 제공자의 토큰 엔드포인트로 `application/x-www-form-urlencoded` `POST` 요청을 통해 전송됩니다.
 
 ```
 POST https://github.com/login/oauth/access_token
@@ -80,14 +80,14 @@ grant_type=authorization_code
 &code=<CODE>
 ```
 
-If your OAuth provider uses a client secret, it should be base64 encoded with the client ID and secret included in the Authorization header (HTTP basic authorization scheme).
+OAuth 제공자가 클라이언트 비밀을 사용하는 경우, 클라이언트 ID와 비밀을 포함한 기본 인증 헤더에서 base64로 인코딩되어야 합니다.
 
 ```go
 var clientId, clientSecret string
 credentials := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientSecret))
 ```
 
-Some providers also allow the client secret to be included in the body.
+일부 제공자는 클라이언트 비밀을 본문에 포함시키는 것도 허용합니다.
 
 ```
 POST https://github.com/login/oauth/access_token
@@ -101,23 +101,24 @@ grant_type=authorization_code
 &code=<CODE>
 ```
 
-The request will return an access token, which can then be used to get the user's identity. It may also include other fields such as `refresh_token` and `expires_in`.
+이 요청은 액세스 토큰을 반환하며, 이 토큰을 사용해 사용자의 신원을 확인할 수 있습니다. 추가로 `refresh_token`이나 `expires_in` 같은 필드도 포함될 수 있습니다.
 
 ```
 { "access_token": "<ACCESS_TOKEN>" }
 ```
 
-For example, using the access token, you can get their GitHub profile and store their GitHub user ID, which will allow you to get their registered account when they sign in again. Be aware that the email address provided by the OAuth provider may not be verified. You may need to manually verify user emails or block users without a verified email.
+예를 들어, 액세스 토큰을 사용하여 사용자의 GitHub 프로필을 가져오고 GitHub 사용자 ID를 저장할 수 있습니다. 이를 통해 사용자가 다시 로그인할 때 등록된 계정을 찾을 수 있습니다. OAuth 제공자가 제공하는 이메일 주소가 인증되지 않았을 수 있다는 점을 유의하세요. 이메일을 수동으로 인증하거나 인증되지 않은 사용자의 경우 로그인 절차를 차단해야 할 수 있습니다.
 
-The access token itself should never be used as a replacement for sessions.
+액세스 토큰 자체는 세션 대체 수단으로 사용되어서는 안 됩니다.
 
 ## Proof key for code exchange (PKCE) flow
 
-PKCE was introduced in [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) to provide additional protection for OAuth 2.0. We recommend using it in addition to state and a client secret if your OAuth provider supports it. Be aware that some OAuth providers do not require a client secret when PKCE is enabled, in which case PKCE should not be used.
+PKCE는 OAuth 2.0에 추가 보호를 제공하기 위해 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636)
+에서 도입되었습니다. 제공자가 지원하는 경우, 상태 및 클라이언트 비밀과 함께 사용하는 것이 좋습니다. 일부 OAuth 제공자는 PKCE가 활성화된 경우 클라이언트 비밀이 필요하지 않으므로, 이 경우 PKCE는 사용하지 않아야 합니다.
 
-PKCE can replace state entirely, as both protect against CSRF attacks, but it may be required by your OAuth provider.
+PKCE는 상태를 완전히 대체할 수 있으며, 둘 다 CSRF 공격을 방지하지만 OAuth 제공자가 요구할 수 있습니다.
 
-A new code verifier must be generated on each request. It should be generated using a cryptographically secure random generator and have at least 112 bits of entropy (256 bits recommended by the RFC). Similar to state, your application must keep track of the code verifier associated with each attempt (using cookies or sessions). A base64url (no padding) encoded SHA256 hash of it called a code challenge is included in the authorization URL.
+각 요청에서 새로운 코드 검증자를 생성해야 하며, 최소 112비트 이상의 엔트로피로 암호적으로 안전한 난수 생성기를 사용하여 생성해야 합니다(RFC에서는 256비트를 권장). 상태와 유사하게, 애플리케이션은 각 시도와 관련된 코드 검증자를 추적해야 합니다(쿠키나 세션 사용). base64url로 인코딩된 SHA256 해시(패딩 없음)를 코드 챌린지로 변환하여 인증 URL에 포함시킵니다.
 
 ```go
 var codeVerifier string
@@ -135,7 +136,7 @@ response_type=code
 &code_challenge=<CODE_CHALLENGE>
 ```
 
-In the callback endpoint, the code verifier of the current attempt should be sent alongside the authorization code.
+콜백 엔드포인트에서 현재 시도와 관련된 코드 검증자를 인증 코드와 함께 전송해야 합니다.
 
 ```
 POST https://oauth2.googleapis.com/token
@@ -152,7 +153,7 @@ grant_type=authorization_code
 
 ## OpenID Connect (OIDC)
 
-[OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html) is a widely used protocol built on top of OAuth 2.0. An important addition to OAuth is that the identity provider returns an ID token alongside the access token. An ID token is a [JSON Web Token](https://datatracker.ietf.org/doc/html/rfc7519) that includes user data. It will always include a unique identifier for the user in the `sub` field. 
+[OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html)는 OAuth 2.0 위에 구축된 널리 사용되는 프로토콜입니다. OAuth에 중요한 추가 사항은 인증 제공자가 액세스 토큰과 함께 ID 토큰을 반환한다는 점입니다. ID 토큰은 사용자 데이터를 포함하는 [JSON Web Token](https://datatracker.ietf.org/doc/html/rfc7519)입니다. sub 필드에 사용자의 고유 식별자를 항상 포함합니다.
 
 ```
 {
@@ -161,21 +162,21 @@ grant_type=authorization_code
 }
 ```
 
-While you can validate the token with a public key, this is not strictly necessary for server-side applications if you're using HTTPS for communications.
+토큰을 공개 키로 검증할 수 있지만, HTTPS를 사용해 통신 중이라면 서버 측 애플리케이션에서 반드시 필요한 것은 아닙니다.
 
 ### OpenID Connect Discovery
 
-OpenID Connect defines a [discovery mechanism](https://openid.net/specs/openid-connect-discovery-1_0.html) that allows clients to dynamically fetch the OpenID Provider's configuration, including the OAuth 2.0 endpoint locations. This eliminates the need to hard-code endpoint URLs in your application. To use OpenID Connect Discovery, your OpenID Provider must have a discovery endpoint available. 
+OpenID Connect는 OAuth 2.0 엔드포인트 위치를 동적으로 가져올 수 있는 [디스커버리 메커니즘](https://openid.net/specs/openid-connect-discovery-1_0.html)을 정의합니다. 이를 통해 애플리케이션에서 엔드포인트 URL을 하드코딩할 필요가 없습니다. OpenID Connect Discovery를 사용하려면 OpenID 제공자가 디스커버리 엔드포인트를 제공해야 합니다.
 
-The discovery endpoint is a well-known URL that returns a JSON document containing the OpenID Provider's configuration information. Note that not all OAuth providers support OpenID Connect Discovery. Check your provider's documentation to determine if they offer a discovery endpoint. If not, you may still need to manually configure the endpoint URLs in your application.
+디스커버리 엔드포인트는 OpenID 제공자의 구성 정보를 포함하는 JSON 문서를 반환하는 잘 알려진 URL입니다. 모든 OAuth 제공자가 OpenID Connect Discovery를 지원하는 것은 아닙니다. 제공자의 문서를 확인하여 디스커버리 엔드포인트가 있는지 확인하세요. 그렇지 않은 경우, 애플리케이션에서 엔드포인트 URL을 수동으로 구성해야 할 수 있습니다.
 
-The well-known URL has the path `/.well-known/openid-configuration`. For example, Google's Discovery Endpoint looks like this:
+잘 알려진 URL 경로는 `/.well-known/openid-configuration`입니다. 예를 들어, 구글의 디스커버리 엔드포인트는 다음과 같습니다:
 
 ```
 https://accounts.google.com/.well-known/openid-configuration
 ```
 
-The endpoint will return a JSON object containing the OpenID Provider's configuration, including the endpoint URLs for authorization, token exchange, and user info retrieval.
+이 엔드포인트는 OpenID 제공자의 구성 정보를 포함하는 JSON 객체를 반환하며, 여기에는 인증, 토큰 교환, 사용자 정보 검색을 위한 엔드포인트 URL이 포함됩니다.
 
 ```json
 {
@@ -189,11 +190,11 @@ The endpoint will return a JSON object containing the OpenID Provider's configur
 }
 ```
 
-With OpenID Connect Discovery, your application can dynamically adapt to changes in the OpenID Provider's configuration without requiring code updates. This ensures that your application always uses the most up-to-date endpoint URLs. The drawback is that you will have to make extra fetch requests.
+OpenID Connect Discovery를 사용하면 애플리케이션이 OpenID 제공자의 구성 변경 사항에 동적으로 적응할 수 있으며, 코드 업데이트가 필요하지 않습니다. 이를 통해 항상 최신 엔드포인트 URL을 사용할 수 있습니다. 다만, 추가로 fetch 요청을 해야 하는 단점이 있습니다.
 
 ## Account linking
 
-Account linking allows users to sign in with any of their social accounts and be authenticated as the same user on your application. It is usually done by checking the email address registered with the provider. If you're using email to link accounts, make sure to validate the user's email. Most providers provide a `is_verified` field or similar in user profiles. Do not assume that the email has been verified unless the provider explicitly mentions it in their documentation. Users without a verified email should be prevented from completing the authentication process and prompted to verify their email first.
+계정 연결을 통해 사용자는 여러 소셜 계정으로 로그인하고 애플리케이션에서 동일한 사용자로 인증될 수 있습니다. 주로 제공자와 등록된 이메일 주소를 확인하여 이루어집니다. 이메일을 사용해 계정을 연결하는 경우, 사용자의 이메일을 검증해야 합니다. 대부분의 제공자는 사용자 프로필에 `is_verified` 필드나 유사한 항목을 제공합니다. 제공자의 문서에 명시되지 않는 한, 이메일이 검증되었음을 가정하지 마세요. 검증되지 않은 이메일을 가진 사용자는 인증 절차를 완료할 수 없도록 차단하고 이메일을 먼저 검증하도록 유도해야 합니다.
 
 ## Other considerations
 

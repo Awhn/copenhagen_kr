@@ -4,11 +4,11 @@ title: "Email verification"
 
 # Email verification
 
-If your application requires user email addresses to be unique, email verification is a must. It discourages users from entering a random email address and, if password reset is implemented, allows users to take back accounts created with their email address. You may even want to block users from accessing your application's content until they verify their email address.
+애플리케이션에서 사용자 이메일 주소가 고유해야 하는 경우 이메일 인증은 필수입니다. 사용자가 임의의 이메일 주소를 입력하는 것을 방지하고 비밀번호 재설정이 구현된 경우 사용자가 자신의 이메일 주소로 만든 계정을 되찾을 수 있도록 합니다. 사용자가 이메일 주소를 인증할 때까지 애플리케이션의 콘텐츠에 액세스하지 못하도록 차단할 수도 있습니다.
 
-*Email addresses are case-insensitive.* We recommend normalizing user-provided email addresses to lower case.
+*이메일 주소는 대소문자를 구분하지 않습니다.* 사용자가 제공한 이메일 주소를 소문자로 정규화하는 것이 좋습니다.
 
-## Table of contents
+## 목차
 
 - [Input validation](#input-validation)
 	- [Sub-addressing](#sub-addressing)
@@ -19,56 +19,56 @@ If your application requires user email addresses to be unique, email verificati
 
 ## Input validation
 
-Emails are complex and cannot be fully validated using Regex. Attempting to use Regex may also introduce [ReDoS vulnerabilities](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). Do not over-complicate it:
+이메일은 복잡하여 정규식을 사용하여 완전히 유효성을 검사할 수 없습니다. 정규식 사용을 시도하면 [ReDoS 취약점](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)이 발생할 수도 있습니다. 지나치게 복잡하게 만들지 마세요:
 
-- Includes at least 1 `@` character.
-- Has at least 1 character before the`@`.
-- The domain part includes at least 1 `.` and has at least 1 character before it.
-- It does not start or end with a whitespace.
-- Maximum of 255 characters.
+- 최소 1개의 `@` 문자를 포함합니다.
+- 앞에 `@` 문자가 1개 이상 있어야 합니다.
+- 도메인 부분에는 최소 1개의 `.`가 포함되고 그 앞에 최소 1개의 문자가 있습니다.
+- 공백으로 시작하거나 공백으로 끝나지 않습니다.
+- 최대 255자까지 입력할 수 있습니다.
 
 ### Sub-addressing
 
-Some email providers, including Google, allow users to specify a tag that will be ignored by their servers. For example, a user with `user@example.com` can use `user+foo@example.com` and `user+bar@example.com`. You can block emails with `+` to prevent users from making multiple accounts with the same email address, but users would still be able to use temporary email addresses or just create a new email address. Never silently remove the tag portion from the user input as an email address with `+` can just be a regular, valid email address.
+Google을 비롯한 일부 이메일 제공업체에서는 사용자가 서버에서 무시할 태그를 지정할 수 있도록 허용합니다. 예를 들어 `user@example.com`을 사용하는 사용자는 `user+foo@example.com` 및 `user+bar@example.com`를 사용할 수 있습니다. 사용자가 동일한 이메일 주소로 여러 개의 계정을 만들지 못하도록 `+`가 포함된 이메일을 차단할 수 있지만, 사용자는 여전히 임시 이메일 주소를 사용하거나 새 이메일 주소를 만들 수 있습니다. '+'가 포함된 이메일 주소는 정상적인 유효한 이메일 주소일 수 있으므로 사용자 입력에서 태그 부분을 자동으로 제거하지 마세요.
 
 ## Email verification codes
 
-One way to verify email is to send a secret code stored in the server to the user's mailbox.
+이메일을 인증하는 한 가지 방법은 서버에 저장된 비밀 코드를 사용자의 사서함으로 보내는 것입니다.
 
-This approach has some advantages over using links:
+이 방법은 링크를 사용하는 것보다 몇 가지 장점이 있습니다:
 
-- People are increasingly less likely to click on links.
-- Some filters may automatically classify emails with links as spam or phishing.
-- Using verification links may introduce friction if the user wants to finish the process on a device that does not have access to the verification message, or on a device that cannot open links.
+- 사람들이 링크를 클릭할 가능성이 점점 줄어들고 있습니다.
+- 일부 필터는 링크가 포함된 이메일을 스팸 또는 피싱으로 자동 분류할 수 있습니다.
+- 사용자가 인증 메시지에 액세스할 수 없는 디바이스나 링크를 열 수 없는 디바이스에서 인증 절차를 완료하려는 경우 인증 링크를 사용하면 마찰이 발생할 수 있습니다.
 
-The verification code should be at least 8 digits if the code is numeric, and at least 6 digits if it's alphanumeric. Use a stronger code if the verification is part of a secure process, like creating a new account or changing contact information. You should avoid using both lowercase and uppercase letters. You may also want to remove numbers and letters that can be misread (0, O, 1, I, etc). It must be generated using a cryptographically secure random generator.
+인증 코드는 숫자인 경우 8자리 이상, 영숫자인 경우 6자리 이상이어야 합니다. 새 계정을 만들거나 연락처 정보를 변경하는 등 인증이 보안 프로세스의 일부인 경우 더 강력한 코드를 사용하세요. 소문자와 대문자를 모두 사용하지 않는 것이 좋습니다. 또한 오독될 수 있는 숫자나 문자(0, O, 1, I 등)는 제거할 수 있습니다. 암호학적으로 안전한 무작위 생성기를 사용하여 생성해야 합니다.
 
-A single verification code should be tied to a single user and email. This is especially important if you allow users to change their email address after they're sent an email. Each code should be valid for at least 15 minutes (anywhere between 1-24 hours is recommended). The code must be single-use and immediately invalidated after validation. A new verification code should be generated every time the user asks for another email/code.
+하나의 인증 코드는 하나의 사용자와 이메일에 연결되어야 합니다. 이는 사용자가 이메일을 받은 후 이메일 주소를 변경할 수 있도록 허용하는 경우 특히 중요합니다. 각 코드는 최소 15분 동안 유효해야 합니다(1~24시간 권장). 코드는 일회용이어야 하며 유효성 검사 후 즉시 무효화되어야 합니다. 사용자가 다른 이메일/코드를 요청할 때마다 새로운 인증 코드가 생성되어야 합니다.
 
-Similar to a regular login form, throttling or rate-limiting based on the user ID must be implemented. A good limit is around 10 attempts per hour. Assuming proper limiting is implemented, the code can be valid for up to 24 hours. You should generate and resend a new code if the user-provided code has expired.
+일반 로그인 양식과 마찬가지로 사용자 ID에 따라 스로틀링 또는 속도 제한을 구현해야 합니다. 시간당 10회 정도 시도 횟수를 제한하는 것이 좋습니다. 적절한 제한이 구현되었다고 가정하면 코드는 최대 24시간 동안 유효할 수 있습니다. 사용자가 제공한 코드가 만료된 경우 새 코드를 생성하여 다시 보내야 합니다.
 
-All sessions of a user should be invalidated when their email is verified.
+이메일이 확인되면 사용자의 모든 세션이 무효화되어야 합니다.
 
 ## Email verification links
 
-An alternative way to verify emails is to use a verification link that contains a long, random, single-use [token](/server-side-tokens).
+이메일을 인증하는 다른 방법은 긴 임의의 일회용 [토큰](/server-side-tokens)이 포함된 인증 링크를 사용하는 것입니다.
 
 ```
 https://example.com/verify-email/<TOKEN>
 ```
 
-A single token should be tied to a single user and email. This is especially important if you allow users to change their email address after they're sent an email. Tokens should be single-use and be immediately deleted from storage after verification. The token should be valid for at least 15 minutes (anywhere between 1-24 hours is recommended). When a user asks for another verification email, you can resend the previous token instead of generating a new token if that token is still within expiration.
+단일 토큰은 단일 사용자 및 이메일에 연결되어야 합니다. 이는 사용자가 이메일을 받은 후 이메일 주소를 변경할 수 있도록 허용하는 경우 특히 중요합니다. 토큰은 일회용이어야 하며 확인 후 즉시 저장소에서 삭제되어야 합니다. 토큰은 최소 15분 동안 유효해야 합니다(1~24시간 권장). 사용자가 다른 인증 이메일을 요청할 때 토큰이 아직 유효 기간 내에 있는 경우 새 토큰을 생성하는 대신 이전 토큰을 다시 보낼 수 있습니다.
 
-Make sure to set the [Referrer Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy) tag to `strict-origin` (or equivalent) for any path that includes tokens to protect the tokens from referer leakage.
+리퍼러 유출로부터 토큰을 보호하기 위해 토큰이 포함된 모든 경로에 대해 [리퍼러 정책](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy) 태그를 'strict-origin'(또는 이와 동등한 수준)으로 설정해야 합니다.
 
-All sessions should be invalidated when the email is verified (and create a new one for the current user so they stay signed in).
+이메일이 확인되면 모든 세션이 무효화되어야 하며, 현재 사용자가 로그인 상태를 유지할 수 있도록 새 세션을 생성해야 합니다.
 
 ## Changing emails
 
-The user should be asked for their password, or if [multi-factor authentication](/mfa) is enabled, authenticated with one of their second factors. The new email should be stored separately from the current email until it's verified. For example, the new email could be stored with the verification token/code.
+사용자에게 비밀번호를 묻거나 [다단계 인증](/mfa)이 활성화된 경우 두 번째 요소 중 하나를 사용하여 인증해야 합니다. 새 이메일은 인증이 완료될 때까지 현재 이메일과 별도로 저장해야 합니다. 예를 들어, 새 이메일은 인증 토큰/코드와 함께 저장될 수 있습니다.
 
-A notification should be sent to the previous email address when the user changes their email.
+사용자가 이메일을 변경하면 이전 이메일 주소로 알림이 전송되어야 합니다.
 
 ## Rate limiting
 
-Any endpoint that can send emails should have strict rate limiting implemented.
+이메일을 보낼 수 있는 모든 엔드포인트는 엄격한 전송률 제한을 구현해야 합니다.

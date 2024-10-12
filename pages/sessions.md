@@ -4,9 +4,9 @@ title: "Sessions"
 
 # Sessions
 
-## Table of contents
+## 목차
 
--   [Overview](#overview)
+-   [개요](#개요)
 -   [Session lifetime](#session-lifetime)
     -   [Sudo mode](#sudo-mode)
 -   [Session hijacking](#session-hijacking)
@@ -18,23 +18,23 @@ title: "Sessions"
 
 ## Overview
 
-Throughout a user's visit to your website, they will make multiple requests to your server. If you need to persist state, such as user preference, across those requests, HTTP doesn't provide a mechanism for it. It's a stateless protocol.
+사용자가 웹사이트를 방문하는 동안 여러 요청을 서버로 보내게 됩니다. 이러한 요청들 간에 사용자 상태(예: 사용자 선호도)를 유지해야 할 때, HTTP는 그 자체로 상태를 저장할 수 있는 메커니즘을 제공하지 않습니다. HTTP는 무상태 프로토콜이기 때문입니다.
 
-Sessions are a way to persist state in the server. It is especially useful for managing the authentication state, such as the client's identity. We can assign each session with a unique ID and store it on the server to use it as a token. Then the client can associate the request with a session by sending the session ID with it. To implement authentication, we can simply store user data alongside the session.
+세션은 서버에서 상태를 유지하는 방법입니다. 특히 클라이언트의 신원을 관리하는 인증 상태를 처리하는 데 유용합니다. 각 세션에 고유 ID를 부여하고 이를 서버에 저장하여 토큰으로 사용할 수 있습니다. 클라이언트는 이 세션 ID를 사용하여 요청을 세션에 연결할 수 있습니다. 인증을 구현하려면 세션과 함께 사용자 데이터를 저장하면 됩니다.
 
-It's important that the session ID is sufficiently long and random, or else someone could impersonate other users by just guessing their session IDs. See the [Server-side tokens](/server-side-tokens) guide for generating secure session IDs. Session IDs can be hashed before storage to provide an extra level of security.
+세션 ID는 충분히 길고 무작위적이어야 하며, 그렇지 않으면 누군가가 세션 ID를 추측하여 다른 사용자를 사칭할 수 있습니다. 안전한 세션 ID 생성을 위해 서버 사이드 토큰 가이드를 참조하십시오. 추가 보안 수준을 제공하기 위해 세션 ID를 저장하기 전에 해싱할 수 있습니다.
 
-Depending on your application, you may only have to manage sessions for authenticated users, or for both authenticated and unauthenticated users. You can even manage 2 different kinds of sessions - one for auth and another for non-auth related state.
+애플리케이션에 따라 인증된 사용자만을 위해 세션을 관리하거나, 인증된 사용자와 인증되지 않은 사용자 모두를 위해 세션을 관리할 수 있습니다. 인증 관련 상태와 비인증 관련 상태를 각각 처리하는 두 종류의 세션을 관리할 수도 있습니다.
 
 ## Session lifetime
 
-If you only manage sessions for authenticated users, a new session is created whenever a user signs in. If you plan to manage session for non-authenticated users as well, sessions should be automatically created when an incoming request doesn't include a valid session. Make sure you don't make your application vulnerable to [session fixation attacks](#session-fixation-attacks).
+인증된 사용자만을 위해 세션을 관리하는 경우, 사용자가 로그인할 때마다 새로운 세션이 생성됩니다. 인증되지 않은 사용자도 위한 세션을 관리하려면, 유효한 세션이 포함되지 않은 요청이 들어올 때 자동으로 세션을 생성해야 합니다. [세션 고정 공격](#session-fixation-attacks)에 애플리케이션이 취약해지지 않도록 주의하십시오.
 
-For security-critical applications, it is crucial for sessions to expire automatically. This minimizes the time an attacker has to hijack sessions. The expiration should match how long the user is expected to use your application in a single sitting.
+보안이 중요한 애플리케이션에서는 세션이 자동으로 만료되도록 하는 것이 중요합니다. 이렇게 하면 공격자가 세션을 탈취할 수 있는 시간을 최소화할 수 있습니다. 만료 시간은 사용자가 한 번에 애플리케이션을 사용하는 예상 시간과 일치해야 합니다.
 
-However, for less critical websites, such as a social media app, it would be annoying for users if they had to sign in every single day. A good practice here is to set the expiration to a reasonable time, like 30 days, but extend the expiration whenever the session is used. For example, sessions may expire in 30 days by default, but the expiration gets pushed back 30 days when it's used within 15 days before expiration. This effectively invalidates sessions for inactive users, while keeping active users signed in.
+그러나 소셜 미디어 애플리케이션과 같이 보안이 덜 중요한 웹사이트의 경우, 사용자가 매일 다시 로그인해야 한다면 귀찮을 수 있습니다. 여기서는 만료 시간을 30일과 같이 적절하게 설정하고 세션이 사용될 때마다 만료 시간을 연장하는 것이 좋습니다. 예를 들어, 세션이 기본적으로 30일 후에 만료되지만, 만료 15일 전 내에 사용되면 만료 시간이 30일 연장될 수 있습니다. 이렇게 하면 비활성 사용자에 대한 세션은 무효화되지만, 활성 사용자는 계속 로그인된 상태를 유지할 수 있습니다.
 
-You can also combine both approaches. For example, you can set the expiration to an hour and extend it every 30 minutes but set an absolute expiration of 12 hours so sessions won't last for longer than that.
+두 가지 접근 방식을 결합할 수도 있습니다. 예를 들어, 만료 시간을 1시간으로 설정하고 30분마다 연장하되, 세션이 12시간을 초과하지 않도록 절대 만료 시간을 설정할 수 있습니다.
 
 ```go
 const sessionExpiresIn = 30 * 24 * time.Hour
@@ -57,54 +57,54 @@ func validateSession(sessionId string) (*Session, error) {
 
 ### Sudo mode
 
-An alternative to short-lived sessions is to implement long-lived sessions coupled with sudo mode. Sudo mode allows authenticated users to access security-critical components for a limited time by re-authenticating with one of their credentials (passwords, WebAuthn credentials, TOTP, etc). A simple way to implement this is by keeping track of when the user last used their credentials in each session. This approach provides the security benefits of short-lived sessions without annoying frequent users. This can also help against [session hijacking](#session-hijacking).
+단기 세션의 대안으로 장기 세션과 sudo 모드를 결합하는 방법이 있습니다. Sudo 모드는 인증된 사용자가 암호, WebAuthn 자격 증명, TOTP 등의 자격 증명으로 다시 인증을 통해 보안이 중요한 구성 요소에 제한된 시간 동안 접근할 수 있도록 합니다. 이를 구현하는 간단한 방법은 각 세션에서 사용자가 마지막으로 자격 증명을 사용한 시점을 기록하는 것입니다. 이 접근 방식은 잦은 인증 요구 없이 단기 세션의 보안 이점을 제공합니다. 또한 [세션 하이재킹](#session-hijacking)에 대한 방어에도 도움이 됩니다.
 
 ## Session hijacking
 
-Session hijacking is another word for stealing sessions. Common attacks include XSS, man-in-the-middle (MITM), and session sniffing. MITM attacks are especially hard to mitigate since it's ultimately up to the users to protect their device and network. Still, there are some ways to protect your users.
+세션 하이재킹은 세션을 훔치는 것을 의미합니다. 일반적인 공격으로는 XSS, 중간자 공격(MITM), 세션 스니핑이 있습니다. MITM 공격은 사용자가 장치와 네트워크를 보호하는 데 달려 있기 때문에 특히 방어하기 어렵습니다. 그럼에도 불구하고 사용자를 보호할 몇 가지 방법이 있습니다.
 
-First, consider tracking the user agent (device) and IP address linked to the session to detect suspicious requests. IP addresses can be dynamic for mobile users so you may want to keep track of the general area (country) instead of the specific address. Limiting the number of sessions connected to a user based on these information is also a good safeguard.
+첫째, 세션과 연결된 사용자 에이전트(장치)와 IP 주소를 추적하여 의심스러운 요청을 감지하는 방법이 있습니다. 모바일 사용자의 경우 IP 주소는 동적일 수 있으므로 특정 주소 대신 일반적인 지역(국가)을 추적하는 것이 좋습니다. 이러한 정보를 바탕으로 사용자가 연결할 수 있는 세션 수를 제한하는 것도 좋은 방어책입니다.
 
-Since IP addresses and request headers can be easily spoofed, however, implementing [sudo mode](#sudo-mode) is recommended for any security-critical applications.
+그러나 IP 주소와 요청 헤더는 쉽게 위조될 수 있으므로, 보안이 중요한 애플리케이션에서는 [Sudo 모드](#sudo-mode)를 구현하는 것이 권장됩니다.
 
 ## Session invalidation
 
-Sessions can be invalidated by deleting it from both server and client storage.
+세션은 서버와 클라이언트 저장소에서 모두 삭제하여 무효화할 수 있습니다.
 
-When the user signs out, invalidate the current session, or for security-critical applications, invalidate all sessions belonging to that user.
+사용자가 로그아웃할 때 현재 세션을 무효화하거나, 보안이 중요한 애플리케이션의 경우 해당 사용자의 모든 세션을 무효화해야 합니다.
 
-All sessions of the user should also be invalidated when they gain new permissions (email verification, new role, etc) or change passwords.
+사용자가 새로운 권한을 획득했을 때(이메일 인증, 새로운 역할 등) 또는 비밀번호를 변경했을 때도 사용자의 모든 세션이 무효화되어야 합니다.
 
 ## Client storage
 
-The client should store the session ID in the user's device to be used for subsequent requests. The browser mainly provides 2 ways to store data - cookies and the Web Storage API. Cookies should be preferred for websites as they're automatically included in requests by the browser.
+클라이언트는 이후의 요청에서 사용하기 위해 세션 ID를 사용자의 장치에 저장해야 합니다. 브라우저는 데이터를 저장할 수 있는 두 가지 방법, 즉 쿠키와 웹 스토리지 API를 제공합니다. 쿠키는 브라우저가 요청에 자동으로 포함하기 때문에 웹사이트에서 선호됩니다.
 
 ### Cookies
 
-Session cookies should have the following attributes:
+세션 쿠키는 다음과 같은 속성을 가져야 합니다:
 
--   `HttpOnly`: Cookies are only accessible server-side
--   `SameSite=Lax`: Use `Strict` for critical websites
--   `Secure`: Cookies can only be sent over HTTPS
--   `Max-Age` or `Expires`: Must be defined to persist cookies
--   `Path=/`: Cookies can be accessed from all routes
+-   `HttpOnly`: 쿠키는 서버 측에서만 접근 가능
+-   `SameSite=Lax`: 보안이 중요한 웹사이트의 경우 `Strict` 사용
+-   `Secure`: 쿠키는 HTTPS를 통해서만 전송
+-   `Max-Age` 또는 `Expires`: 쿠키를 지속하려면 반드시 정의되어야 함
+-   `Path=/`: 모든 경로에서 쿠키에 접근 가능
 
-[CSRF protection](/csrf) must be implemented when using cookies, and using the `SameSite` flag is not sufficient. Using cookies does not automatically protect your users from cross-site scripting attacks (XSS) as well. While the session ID can't be read directly, authenticated requests can still be made as browsers automatically include cookies in requests.
+쿠키를 사용할 때 [CSRF 보호](/csrf)를 구현해야 하며, `SameSite` 플래그만으로는 충분하지 않습니다. 쿠키를 사용한다고 해서 크로스 사이트 스크립팅(XSS) 공격으로부터 사용자를 자동으로 보호할 수 있는 것도 아닙니다. 세션 ID를 직접 읽을 수는 없지만, 브라우저는 요청에 쿠키를 자동으로 포함하기 때문에 인증된 요청은 여전히 가능할 수 있습니다. 
 
-The maximum expiration for a cookie is 400 days. If you plan for the session to be long-lived, continuously set the cookie.
+쿠키의 최대 만료 기간은 400일입니다. 세션을 장기간 유지할 계획이라면 쿠키를 지속적으로 설정해야 합니다.
 
-`Lax` should be preferred over `Strict` for the `SameSite` attribute as using `Strict` will cause the browser to not send the session cookie when the user visits your application via an external link.
+`SameSite` 속성에 대해 `Strict` 대신 `Lax`를 선호해야 합니다. `Strict`를 사용하면 사용자가 외부 링크를 통해 애플리케이션에 접속할 때 브라우저가 세션 쿠키를 전송하지 않기 때문입니다.
 
 ### Web Storage API
 
-Another option is to store session IDs inside `localStorage` or `sessionStorage`. If your website has an XSS vulnerability, this will allow attackers to directly read and steal the user's session ID. It is especially vulnerable to supply chain attacks since tokens can be stolen by just reading the entire local storage, without using any application-specific exploits.
+또 다른 방법은 세션 ID를 `localStorage` 또는 `sessionStorage`에 저장하는 것입니다. 만약 웹사이트에 XSS 취약점이 있다면, 공격자가 사용자의 세션 ID를 직접 읽고 훔칠 수 있습니다. 이는 공급망 공격에 특히 취약한데, 애플리케이션별로 특정 취약점을 사용하지 않고도 전체 로컬 스토리지를 읽어 토큰을 훔칠 수 있기 때문입니다.
 
-Session tokens can be sent with the request using the `Authorization` header for example. Do not send them inside URLs as query parameters or inside form data, nor should tokens sent in this manner be accepted.
+세션 토큰은 예를 들어 `Authorization` 헤더를 사용하여 요청과 함께 전송할 수 있습니다. 토큰을 URL의 쿼리 매개변수나 폼 데이터 안에 전송하지 마십시오. 이러한 방식으로 전송된 토큰을 수락해서도 안 됩니다.
 
 ## Session fixation attacks
 
-Applications that maintain sessions for both authenticated and unauthenticated users and reuse the current session when a user signs in are vulnerable to session fixation attacks.
+인증된 사용자와 인증되지 않은 사용자를 모두 위한 세션을 유지하고, 사용자가 로그인할 때 현재 세션을 재사용하는 애플리케이션은 세션 고정 공격에 취약할 수 있습니다.
 
-Say an application allows the session ID to be sent inside the URL as a query parameter. If an attacker shares a link to the sign-in page with a session ID already included and the user signs in, the attacker now has a valid session ID to impersonate that user. A similar attack can be done if the application accepts session IDs in forms or cookies, though the latter requires an XSS vulnerability to exploit.
+예를 들어, 애플리케이션이 세션 ID를 URL의 쿼리 매개변수로 전송하는 것을 허용한다고 가정해봅시다. 공격자가 세션 ID가 포함된 링크를 로그인 페이지로 공유하고 사용자가 로그인하면, 공격자는 해당 사용자로 사칭할 수 있는 유효한 세션 ID를 가지게 됩니다. 비슷한 공격은 애플리케이션이 세션 ID를 폼 또는 쿠키에서 수락하는 경우에도 발생할 수 있지만, 후자는 XSS 취약점이 있어야 악용 가능합니다.
 
-This can be avoided by always creating a new session when the user signs in and only accepting session IDs via cookies and request headers.
+이 문제를 피하려면 사용자가 로그인할 때마다 새로운 세션을 생성하고, 세션 ID는 쿠키와 요청 헤더를 통해서만 수락하도록 해야 합니다.
