@@ -7,7 +7,7 @@ url: "https://awhn.github.io" # Your GitHub Pages URL
 # Jekyll settings
 source: pages
 markdown: kramdown
-theme: lanyon # Change if using a different theme
+theme: Cayman # Change if using a different theme
 
 # Permalinks
 permalink: /:name/
