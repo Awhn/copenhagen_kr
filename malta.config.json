@@ -1,7 +1,7 @@
 {
 	"name": "The Copenhagen Book",
 	"description": "A basic guideline on implementing auth for the web.",
-	"domain": "https://thecopenhagenbook.com",
+	"domain": "https://awhn.github.io/copenhagen_kr/",
 	"twitter": "@pilcrowonpaper",
 	"sidebar": [
 		{
@@ -31,7 +31,7 @@
 			"pages": [
 				[
 					"GitHub repository",
-					"https://github.com/pilcrowonpaper/copenhagen"
+					"https://github.com/Awhn/copenhagen_kr"
 				],
 				["Twitter", "https://twitter.com/pilcrowonpaper"],
 				[
